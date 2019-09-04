@@ -8,8 +8,8 @@
 # the parent directory is writable by the user that runs "ansible-playbook"
 # command.
 wireguard_cert_directory: "{{ '~/wireguard/certs' | expanduser }}"
-wireguard_cert_owner: "root"
-wireguard_cert_group: "root"
+wireguard_cert_owner: "ansible"
+wireguard_cert_group: "ansible"
 
 # Directory to store WireGuard configuration on the remote hosts
 wireguard_remote_directory: "/etc/wireguard"
@@ -19,3 +19,6 @@ wireguard_port: "51820"
 
 # The interface name that wireguard should use.
 wireguard_interface: "wg0"
+
+wireguard_ansible_group: "vpn"
+wireguard_ansible_children_group_prefix: "childvpn"

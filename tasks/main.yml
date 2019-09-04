@@ -37,12 +37,17 @@
     mode: 0700
   run_once: true
   delegate_to: localhost
+  vars:
+    ansible_become: False
   tags:
     wg-generate-keys
 
 - name: Set WireGuard IP (without mask)
   set_fact:
-    wireguard_ip: "{{ wireguard_address.split('/')[0] }}"
+    "{{ item + '_ip' }}": "{{ lookup('vars', item + '_address') }}"
+  with_items:
+    - "{{ group_names | select('search', wireguard_ansible_children_group_prefix) | list }}"
+  when: group_names | select('search', wireguard_ansible_children_group_prefix) | list | count > 0
 
 - name: Set path to private key file
   set_fact:
@@ -61,6 +66,8 @@
     path: "{{ private_key_file_path }}"
   register: private_key_file_stat
   delegate_to: localhost
+  vars:
+    ansible_become: False
   tags:
     - wg-generate-keys
 
@@ -68,7 +75,7 @@
   shell: "wg genkey"
   register: wg_private_key_result
   with_inventory_hostnames:
-    - vpn
+    - "{{ wireguard_ansible_group }}"
   when: not private_key_file_stat.stat.exists
   tags:
     - wg-generate-keys
@@ -86,7 +93,7 @@
   register: wg_public_key_result
   when: not private_key_file_stat.stat.exists
   with_inventory_hostnames:
-    - vpn
+    - "{{ wireguard_ansible_group }}"
   tags:
     - wg-generate-keys
 
@@ -106,6 +113,8 @@
     mode: 0644
   when: not private_key_file_stat.stat.exists
   delegate_to: localhost
+  vars:
+    ansible_become: False
   tags:
     - wg-generate-keys
 
@@ -118,6 +127,8 @@
     mode: 0644
   when: not private_key_file_stat.stat.exists
   delegate_to: localhost
+  vars:
+    ansible_become: False
   tags:
     - wg-generate-keys
 
@@ -144,7 +155,7 @@
 - name: Generate WireGuard configuration file
   template:
     src: wg.conf.j2
-    dest: "{{ wireguard_remote_directory }}/{{ wireguard_interface }}.conf"
+    dest: "{{ wireguard_remote_directory }}/{{ lookup('vars', item + '_interface') }}.conf"
     owner: root
     group: root
     mode: 0600
@@ -152,9 +163,16 @@
     - wg-config
   notify:
     - restart wireguard
+  with_items:
+    - "{{ group_names | select('search', wireguard_ansible_children_group_prefix) | list }}"
+  when: group_names | select('search', wireguard_ansible_children_group_prefix) | list | count > 0
+
 
 - name: Start and enable WireGuard service
-  service:
-    name: "wg-quick@{{ wireguard_interface }}"
+  systemd:
+    name: "wg-quick@{{ lookup('vars', item + '_interface') }}"
     state: started
     enabled: yes
+  with_items:
+    - "{{ group_names | select('search', wireguard_ansible_children_group_prefix) | list }}"
+  when: group_names | select('search', wireguard_ansible_children_group_prefix) | list | count > 0
