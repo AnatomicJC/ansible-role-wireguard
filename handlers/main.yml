@@ -1,5 +1,8 @@
 ---
 - name: restart wireguard
   service:
-    name: "wg-quick@{{ wireguard_interface }}"
+    name: "wg-quick@{{ lookup('vars', item + '_interface') }}"
     state: restarted
+  with_items:
+    - "{{ group_names | select('search', wireguard_ansible_children_group_prefix) | list }}"
+  when: group_names | select('search', wireguard_ansible_children_group_prefix) | list | count > 0
