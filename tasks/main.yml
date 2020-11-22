@@ -94,6 +94,8 @@
     set -o pipefail
     echo '{{ wg_private_key }}' | wg pubkey
   register: wg_public_key_result
+  args:
+    executable: /bin/bash
   when: not private_key_file_stat.stat.exists
   with_inventory_hostnames:
     - "{{ wireguard_ansible_group }}"
