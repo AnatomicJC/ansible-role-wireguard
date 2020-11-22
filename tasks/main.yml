@@ -12,6 +12,7 @@
     packages:
     - wireguard-dkms
     - wireguard-tools
+    - "linux-headers-{{ ansible_kernel }}"
   tags:
     - wg-install
     - skip_ansible_lint
@@ -169,7 +170,6 @@
     - "{{ group_names | select('search', wireguard_ansible_children_group_prefix) | list }}"
   when: group_names | select('search', wireguard_ansible_children_group_prefix) | list | count > 0
 
-
 - name: Start and enable WireGuard service
   systemd:
     name: "wg-quick@{{ lookup('vars', item + '_interface') }}"
@@ -178,3 +178,6 @@
   with_items:
     - "{{ group_names | select('search', wireguard_ansible_children_group_prefix) | list }}"
   when: group_names | select('search', wireguard_ansible_children_group_prefix) | list | count > 0
+
+- name: Refresh facts
+  setup:
