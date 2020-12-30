@@ -1,8 +1,14 @@
 #jinja2: lstrip_blocks:"True",trim_blocks:"True"
 [Interface]
 Address = {{ hostvars[inventory_hostname][item + '_address'] }}
-PrivateKey = {{private_key}}
+PrivateKey = {{ private_key }}
+{% for host in groups[item] %}
+{% if host == inventory_hostname %}
+{% if hostvars[host].wireguard_endpoint is defined %}
 ListenPort = {{ hostvars[inventory_hostname][item + '_port'] }}
+{% endif %}
+{% endif %}
+{% endfor %}
 {% if hostvars[inventory_hostname].wireguard_dns is defined %}
 DNS = {{hostvars[inventory_hostname].wireguard_dns}}
 {% endif %}
@@ -28,9 +34,7 @@ SaveConfig = true
     {% if hostvars[host].wireguard_persistent_keepalive is defined %}
     PersistentKeepalive = {{hostvars[host].wireguard_persistent_keepalive}}
     {% endif %}
-    {% if hostvars[host].wireguard_endpoint is not defined %}
-    Endpoint = {{host}}:{{ hostvars[host][item + '_port'] }}
-    {% elif hostvars[host].wireguard_endpoint != "" %}
+    {% if hostvars[host].wireguard_endpoint is defined and hostvars[host].wireguard_endpoint != "" %}
     Endpoint = {{hostvars[host].wireguard_endpoint}}:{{ hostvars[host][item + '_port'] }}
     {% endif %}
 
